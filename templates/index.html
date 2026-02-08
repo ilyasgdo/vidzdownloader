@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VidZ Downloader - Téléchargez des vidéos depuis YouTube, TikTok, Twitter et plus">
+    <title>VidZ Downloader - Téléchargeur de Vidéos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">▶</span>
+                <h1>VidZ<span class="accent">Downloader</span></h1>
+            </div>
+            <p class="tagline">Téléchargez vos vidéos préférées en quelques clics</p>
+        </header>
+
+        <main class="main-content">
+            <!-- URL Input Section -->
+            <section class="card input-section" id="inputSection">
+                <div class="input-wrapper">
+                    <div class="input-icon">🔗</div>
+                    <input 
+                        type="url" 
+                        id="urlInput" 
+                        placeholder="Collez l'URL de la vidéo ici..."
+                        autocomplete="off"
+                    >
+                    <button id="pasteBtn" class="btn-icon" title="Coller">
+                        📋
+                    </button>
+                </div>
+                <button id="fetchBtn" class="btn btn-primary">
+                    <span class="btn-text">Récupérer la vidéo</span>
+                    <span class="btn-loader"></span>
+                </button>
+            </section>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message hidden">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text"></span>
+            </div>
+
+            <!-- Video Info Section -->
+            <section class="card video-info hidden" id="videoInfo">
+                <div class="video-preview">
+                    <img id="thumbnail" src="" alt="Video thumbnail">
+                    <div class="video-duration" id="duration"></div>
+                </div>
+                <div class="video-details">
+                    <h2 id="videoTitle"></h2>
+                    <p class="video-channel" id="videoChannel"></p>
+                    <div class="video-stats">
+                        <span id="viewCount"></span>
+                    </div>
+                </div>
+
+                <div class="download-options">
+                    <div class="option-group">
+                        <label for="qualitySelect">Qualité</label>
+                        <select id="qualitySelect" class="select">
+                            <option value="best">Meilleure qualité</option>
+                            <option value="1080p">1080p (Full HD)</option>
+                            <option value="720p">720p (HD)</option>
+                            <option value="480p">480p</option>
+                            <option value="360p">360p</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="audioOnly">
+                            <span class="checkmark"></span>
+                            Audio uniquement (MP3)
+                        </label>
+                    </div>
+                </div>
+
+                <button id="downloadBtn" class="btn btn-download">
+                    <span class="btn-icon-left">⬇️</span>
+                    <span class="btn-text">Télécharger</span>
+                </button>
+            </section>
+
+            <!-- Progress Section -->
+            <section class="card progress-section hidden" id="progressSection">
+                <h3>Téléchargement en cours...</h3>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-stats">
+                    <span id="progressPercent">0%</span>
+                    <span id="progressSpeed"></span>
+                    <span id="progressEta"></span>
+                </div>
+            </section>
+
+            <!-- Success Section -->
+            <section class="card success-section hidden" id="successSection">
+                <div class="success-icon">✅</div>
+                <h3>Téléchargement terminé !</h3>
+                <p id="successFilename"></p>
+                <button id="saveFileBtn" class="btn btn-primary">
+                    💾 Sauvegarder le fichier
+                </button>
+                <button id="newDownloadBtn" class="btn btn-secondary">
+                    🔄 Nouveau téléchargement
+                </button>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Supporte YouTube, TikTok, Twitter, Instagram, Vimeo et +1000 sites</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
