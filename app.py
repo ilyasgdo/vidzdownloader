@@ -23,6 +23,22 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/api/search', methods=['POST'])
+def search_videos():
+    """Search TikTok videos."""
+    data = request.get_json()
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    try:
+        videos = downloader.search_tiktok(query, max_results=12)
+        return jsonify({'videos': videos})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
 @app.route('/api/info', methods=['POST'])
 def get_video_info():
     """Get video information from URL."""

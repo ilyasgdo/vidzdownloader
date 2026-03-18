@@ -25,6 +25,49 @@ class VideoDownloader:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
     
+    def search_tiktok(self, query: str, max_results: int = 12) -> list:
+        """
+        Search TikTok videos by keyword.
+        
+        Args:
+            query: Search query
+            max_results: Maximum number of results
+            
+        Returns:
+            List of video info dictionaries
+        """
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True,
+            'nocheckcertificate': True,
+        }
+        
+        search_url = f"tiktoksearch:{query}"
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                result = ydl.extract_info(search_url, download=False)
+                
+                videos = []
+                entries = result.get('entries', [])[:max_results]
+                
+                for entry in entries:
+                    if entry:
+                        videos.append({
+                            'id': entry.get('id', ''),
+                            'title': entry.get('title', 'Sans titre'),
+                            'url': entry.get('url') or entry.get('webpage_url', ''),
+                            'thumbnail': entry.get('thumbnail', ''),
+                            'uploader': entry.get('uploader', 'Unknown'),
+                            'duration': entry.get('duration', 0),
+                        })
+                
+                return videos
+        except Exception as e:
+            print(f"Search error: {e}")
+            return []
+    
     def get_video_info(self, url: str) -> Dict[str, Any]:
         """
         Fetch video information without downloading.

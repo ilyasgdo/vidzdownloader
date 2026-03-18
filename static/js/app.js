@@ -7,7 +7,7 @@ let currentVideoUrl = '';
 let currentDownloadId = null;
 let progressInterval = null;
 
-// DOM Elements
+// DOM Elements - Download Tab
 const urlInput = document.getElementById('urlInput');
 const pasteBtn = document.getElementById('pasteBtn');
 const fetchBtn = document.getElementById('fetchBtn');
@@ -31,7 +31,37 @@ const successFilename = document.getElementById('successFilename');
 const saveFileBtn = document.getElementById('saveFileBtn');
 const newDownloadBtn = document.getElementById('newDownloadBtn');
 
-// Event Listeners
+// DOM Elements - Search Tab
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchError = document.getElementById('searchError');
+const searchResults = document.getElementById('searchResults');
+const searchLoading = document.getElementById('searchLoading');
+
+// DOM Elements - Tabs
+const tabs = document.querySelectorAll('.tab');
+const tabContents = document.querySelectorAll('.tab-content');
+
+// ========================================
+// Tab Navigation
+// ========================================
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+
+        // Update tabs
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update content
+        tabContents.forEach(content => content.classList.remove('active'));
+        document.getElementById(`${tabId}Tab`).classList.add('active');
+    });
+});
+
+// ========================================
+// Download Tab Events
+// ========================================
 pasteBtn.addEventListener('click', async () => {
     try {
         const text = await navigator.clipboard.readText();
@@ -67,40 +97,53 @@ urlInput.addEventListener('paste', () => {
     }, 100);
 });
 
-// Functions
+// ========================================
+// Search Tab Events
+// ========================================
+searchBtn.addEventListener('click', performSearch);
+
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        performSearch();
+    }
+});
+
+// ========================================
+// Download Tab Functions
+// ========================================
 async function fetchVideoInfo() {
     const url = urlInput.value.trim();
-    
+
     if (!url) {
         showError('Veuillez entrer une URL');
         return;
     }
-    
+
     if (!url.match(/^https?:\/\//)) {
         showError('URL invalide. L\'URL doit commencer par http:// ou https://');
         return;
     }
-    
+
     hideError();
     hideVideoInfo();
     setLoading(fetchBtn, true);
-    
+
     try {
         const response = await fetch('/api/info', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url })
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.error || 'Erreur lors de la récupération');
         }
-        
+
         currentVideoUrl = url;
         displayVideoInfo(data);
-        
+
     } catch (err) {
         showError(err.message || 'Impossible de récupérer les informations de la vidéo');
     } finally {
@@ -113,23 +156,23 @@ function displayVideoInfo(info) {
     videoTitle.textContent = info.title;
     videoChannel.textContent = info.uploader || '';
     duration.textContent = info.duration_formatted || '';
-    
+
     if (info.view_count) {
         viewCount.textContent = `${formatNumber(info.view_count)} vues`;
     } else {
         viewCount.textContent = '';
     }
-    
+
     videoInfo.classList.remove('hidden');
 }
 
 async function startDownload() {
     const quality = qualitySelect.value;
     const isAudioOnly = audioOnly.checked;
-    
+
     setLoading(downloadBtn, true);
     hideVideoInfo();
-    
+
     try {
         const response = await fetch('/api/download', {
             method: 'POST',
@@ -140,17 +183,17 @@ async function startDownload() {
                 audioOnly: isAudioOnly
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.error || 'Erreur lors du téléchargement');
         }
-        
+
         currentDownloadId = data.downloadId;
         showProgressSection();
         startProgressPolling();
-        
+
     } catch (err) {
         showError(err.message);
         showVideoInfo();
@@ -164,7 +207,7 @@ function startProgressPolling() {
         try {
             const response = await fetch(`/api/progress/${currentDownloadId}`);
             const data = await response.json();
-            
+
             if (data.status === 'downloading' || data.status === 'processing') {
                 updateProgress(data);
             } else if (data.status === 'completed') {
@@ -214,7 +257,111 @@ function resetUI() {
     urlInput.focus();
 }
 
+// ========================================
+// Search Tab Functions
+// ========================================
+async function performSearch() {
+    const query = searchInput.value.trim();
+
+    if (!query) {
+        showSearchError('Veuillez entrer un mot-clé de recherche');
+        return;
+    }
+
+    hideSearchError();
+    searchResults.classList.add('hidden');
+    searchLoading.classList.remove('hidden');
+    setLoading(searchBtn, true);
+
+    try {
+        const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Erreur lors de la recherche');
+        }
+
+        displaySearchResults(data.videos);
+
+    } catch (err) {
+        showSearchError(err.message || 'Impossible de rechercher les vidéos');
+    } finally {
+        searchLoading.classList.add('hidden');
+        setLoading(searchBtn, false);
+    }
+}
+
+function displaySearchResults(videos) {
+    searchResults.innerHTML = '';
+
+    if (!videos || videos.length === 0) {
+        showSearchError('Aucune vidéo trouvée pour cette recherche');
+        return;
+    }
+
+    videos.forEach(video => {
+        const card = createVideoCard(video);
+        searchResults.appendChild(card);
+    });
+
+    searchResults.classList.remove('hidden');
+}
+
+function createVideoCard(video) {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+
+    const thumbnailUrl = video.thumbnail || 'https://via.placeholder.com/200x350/1a1a2e/a855f7?text=TikTok';
+
+    card.innerHTML = `
+        <div class="video-card-thumbnail">
+            <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://via.placeholder.com/200x350/1a1a2e/a855f7?text=TikTok'">
+            <div class="video-card-overlay">
+                <button class="video-card-download">⬇️ Télécharger</button>
+            </div>
+        </div>
+        <div class="video-card-info">
+            <div class="video-card-title">${video.title || 'Vidéo TikTok'}</div>
+            <div class="video-card-uploader">@${video.uploader || 'unknown'}</div>
+        </div>
+    `;
+
+    // Click on card to download
+    const downloadButton = card.querySelector('.video-card-download');
+    downloadButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadFromSearch(video.url);
+    });
+
+    // Click on card to switch to download tab
+    card.addEventListener('click', () => {
+        downloadFromSearch(video.url);
+    });
+
+    return card;
+}
+
+function downloadFromSearch(url) {
+    // Switch to download tab
+    tabs.forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="download"]').classList.add('active');
+
+    tabContents.forEach(content => content.classList.remove('active'));
+    document.getElementById('downloadTab').classList.add('active');
+
+    // Set URL and fetch info
+    urlInput.value = url;
+    fetchVideoInfo();
+}
+
+// ========================================
 // UI Helpers
+// ========================================
 function setLoading(button, loading) {
     if (loading) {
         button.classList.add('loading');
@@ -232,6 +379,15 @@ function showError(message) {
 
 function hideError() {
     errorMessage.classList.add('hidden');
+}
+
+function showSearchError(message) {
+    searchError.querySelector('.error-text').textContent = message;
+    searchError.classList.remove('hidden');
+}
+
+function hideSearchError() {
+    searchError.classList.add('hidden');
 }
 
 function showVideoInfo() {
